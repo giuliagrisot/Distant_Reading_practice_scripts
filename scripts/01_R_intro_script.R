@@ -245,9 +245,15 @@ my_df %>% filter(nationality == "Italian")
 # note: the "<-" sign can be substitited by "="
 my_variable <- "Shakespeare"
 my_variable = "Shakespeare"
+
 # still, it is advised to distinguish between the two, as the "<-" sign has a "stronger" function. See for example in the creation of a dataframe
+
 my_df <- data.frame(author = c("Shakespeare", "Dante", "Cervantes", "Pynchon"), nationality = c("English", "Italian", "Spanish", "American"))
+
 author # it does not exist!!
 
 my_df_2 <- data.frame(author <- c("Shakespeare", "Dante", "Cervantes", "Pynchon"), nationality <- c("English", "Italian", "Spanish", "American"))
-author # now it exists!!
+
+author 
+
+# now it exists!!

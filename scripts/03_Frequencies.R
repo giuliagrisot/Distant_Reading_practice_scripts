@@ -5,31 +5,41 @@ library(quanteda.textmodels)
 library(quanteda.textplots)
 library(quanteda.textstats)
 library(ggplot2)
-library(readxl)
+library(readtext)
 
-# first we need to create a corpus
+# first we need to create a corpus.
+# this time we'll be using "quanteda", a package that allows to do corpus analysis very easily
 
-corpus_files <- list.files(path = "corpus", pattern = "*.txt", full.names = T)
-
-corpus_source <- readtext::readtext(corpus_files) %>%
-  left_join(read.csv("metadata.csv", stringsAsFactors = F) %>%
-              rename(doc_id = filename) %>%
-              mutate(doc_id = stringr::str_replace_all(
-                string = doc_id,
-                pattern = "corpus/", 
-                replacement = "")
-                )) %>%
-  select(text, doc_id, author.name, book.title, year, gender.cat) 
-
-names <- c("doc_id", "author.name", "book.title", "gender.cat")
-corpus_source[,names] <- lapply(corpus_source[,names] , factor)
-
-remove(corpus_files)
-
+corpus_source <- readtext("corpus/*.txt", encoding = "UTF-8") %>%
+  mutate(text = gsub("\\s+"," ", text))  %>%
+  as_tibble() %>%
+  mutate(doc_id = stringr::str_remove(doc_id, ".txt")) %>%
+  left_join(readtext("corpus/ELTeC-eng_metadata.tsv",
+                     docid_field = "filename") %>%
+              rename(author = `author.name`, # i want to rename wome variables
+                     author_gender = `author.gender`,
+                     year = `first.edition`) %>%
+              select(doc_id, # let's just preserve a few metadata infos
+                     author,
+                     title,
+                     author_gender,
+                     year,
+                     -text) %>%
+              as_tibble()
+  ) %>%
+  group_by(author_gender) %>%
+  sample_n(5) %>% # for this session, let's limit the corpus to 10 texts (5 for each gender)
+  ungroup()
 
 # and to transform this into a corpus that we can use with the package "quanteda", a friendly package that allows us to analyse various aspects of a corpus
 
-quanteda_texts <- quanteda::corpus(corpus_source)
+quanteda_texts <- quanteda::corpus(corpus_source,
+                                   docid_field = "doc_id",
+                                   text_field = "text",
+                                   meta = list("author",
+                                               "title",
+                                               "author_gender",
+                                               "year"))
 
 remove(corpus_source)
 
@@ -46,32 +56,33 @@ remove(corpus_source)
 
 ## first we need to create a "token" corpus. This file is very big,
 ## so we recommend that you do NOT execute this code. (that's why it's green)
-
-  # quanteda_texts_tok <- tokens(quanteda_texts,
-  #                              # we don't want pucntuation
-  #                              remove_punct = T, 
-  #                              # we want to keep hyphens
-  #                              split_hyphens = F,
-  #                              # but no symbols
-  #                              remove_symbols = T) 
+# 
+# quanteda_texts_tok <- tokens(quanteda_texts,
+#                              # we don't want pucntuation
+#                              remove_punct = T,
+#                              # we want to keep hyphens
+#                              split_hyphens = F,
+#                              # but no symbols
+#                              remove_symbols = T)
+# save(quanteda_texts_tok, file = "quanteda_texts_tok.RData")
 
 
 # instead, load the one we prepared for you
 
-load("resources/quanteda_texts_tokens_gg.Rdata")
+load("quanteda_texts_tok.RData")
 
 ## then we can create a dfm
 
-quanteda_texts_dfm <- dfm(quanteda_texts_tok) 
+quanteda_texts_dfm <- dfm(quanteda_texts_tok)
 
-# and we can have a forst look at the most frequent words, for instance with a wordcloud
+# and we can have a first look at the most frequent words, for instance with a wordcloud
 
 textplot_wordcloud(quanteda_texts_dfm, max_words = 100)
 
 # in a "table" form
 
-frequency_table <- textstat_frequency(quanteda_texts_dfm)
-print(head(frequency_table))
+textstat_frequency(quanteda_texts_dfm) %>%
+  head(30)
 
 # or for in a plot, such as a this one
 
@@ -97,8 +108,8 @@ quanteda_texts_dfm <- dfm(quanteda_texts_tok)  %>%
 
 textplot_wordcloud(quanteda_texts_dfm, max_words = 100)
 
-frequency_table <- textstat_frequency(quanteda_texts_dfm)
-print(head(frequency_table))
+textstat_frequency(quanteda_texts_dfm) %>%
+  head(20)
 
 quanteda_texts_dfm %>% 
   textstat_frequency(n = 15) %>% 
@@ -108,21 +119,24 @@ quanteda_texts_dfm %>%
   labs(x = NULL, y = "Frequency") +
   theme_minimal()
 
-# colnames(quanteda_texts_dfm@docvars)
 
 
 # Alternatively, we can decide beforehand that we want to remove stopwords
 # again, this is a big file, so load it directly.
 
-  # quanteda_texts_tok <- quanteda::tokens(quanteda_texts, 
+  # quanteda_texts_tok_nostop <- quanteda::tokens(quanteda_texts,
   #                                        remove_punct = T,
   #                                        split_hyphens = F,
   #                                        remove_symbols = T) %>%
-  #   tokens_remove(c(stopwords("german")))
+  #   tokens_remove(c(stopwords("english")))
+  # 
+  # save(quanteda_texts_tok_nostop, file = "quanteda_texts_tok_nostop.RData")
+  
+load(file="quanteda_texts_tok_nostop.RData")
 
-load(file="resources/quanteda_texts_tok_nostop_gg.RData")
 
-quanteda_texts_dfm <- dfm(quanteda_texts_tok)
+
+quanteda_texts_dfm <- dfm(quanteda_texts_tok_nostop)
 
 textplot_wordcloud(quanteda_texts_dfm, max_words = 100)
 
@@ -131,19 +145,24 @@ textplot_wordcloud(quanteda_texts_dfm, max_words = 100)
 # another thing we can do is to visualize group differences in frequency,
 # for instance, we might want to see which words are the most frequently used by women vs men authors.
 
+# colnames(quanteda_texts_dfm@docvars) #this will show you which metadta we have
+
+
 quanteda_texts_dfm %>% 
-  textstat_frequency(n = 15, groups = gender.cat) %>% 
+  textstat_frequency(n = 30, groups = author_gender) %>% 
   ggplot(aes(x = reorder(feature, frequency), y = frequency, color=group)) +
   geom_point() +
   coord_flip() +
   labs(x = NULL, y = "Frequency") +
   theme_minimal()
 
+textplot_wordcloud(quanteda_texts_dfm, max_words = 100)
+
 
 ## or look at single words comparisons:
 
 sorted_features <- topfeatures(quanteda_texts_dfm, n = nfeat(quanteda_texts_dfm))
-sorted_features[c("mädchen", "junge", "frau", "mann")]
+sorted_features[c("cat", "dog", "rat", "rabbit")]
 
 # Stats ---------------
 
@@ -172,41 +191,35 @@ quanteda_texts_dfm %>%
   theme_minimal()
 
 
-# we can also zoom in a particluar temporal frame
-
-quanteda_texts_dfm %>% 
-  textstat_frequency(n = 5, groups = year) %>% 
-  filter(group > 1900 & group < 1910) %>%
-  ggplot(aes(x = reorder(feature, frequency), y = frequency, color=group)) +
-  geom_point() +
-  coord_flip() +
-  labs(x = NULL, y = "Frequency") +
-  theme_minimal()
-
-
-# or look at how a specific term is used over time
+# we can also look at how a specific term is used over time
 
 quanteda_texts_dfm %>% 
   textstat_frequency(groups = as.numeric(year)) %>% 
-  filter(feature == "berg") %>%
+  filter(feature == "war") %>%
   ggplot(aes(x = group, y = frequency, label=feature)) +
   geom_col(width = .1) +
   geom_point(size = 1) +
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1, size = 7)
-  ) +
-  # geom_text() +
-  xlab("frequency of the word 'berg' in the corpus over the years")
+  )
 
+
+# or compare the presence of a term by author
 
 quanteda_texts_dfm %>% 
-  textstat_frequency(groups = author.name) %>% 
-  filter(feature == "berg") %>%
+  textstat_frequency(groups = author) %>% 
+  filter(feature == "power") %>%
   ggplot(aes(x = group, y = frequency, label=feature)) +
   geom_col(width = .1) +
   geom_point(size = 1) +
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1, size = 7)
-  ) +
-  # geom_text() +
-  xlab("frequency of the word 'berg' in the corpus by author")
+  ) 
+
+
+## Concordance
+
+# with quateda you can also visualise concordances
+
+
+

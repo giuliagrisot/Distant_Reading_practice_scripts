@@ -1,6 +1,6 @@
 # Where do I start? -------
 
-## Creating your corpus and setting up your data with R Studio -----
+# Creating your corpus and setting up your data with R Studio -----
 
 
 
@@ -33,23 +33,26 @@
 
 # Here we will try and show how different text formats can be imported in R and made ready for some analysis.
 
-## packages -----
+# Packages -----
 
 
 # Before you begin you will need to load some packages. These allow you to execute specific operations.
-# If you have not done so already, you have to install them first: it might take a few minutes and you only have to do it once. If R asks you whether you want to install dependencies for the packages, say yes.
+# If you have not done so already, you have to install them first: it might take a few minutes and you only have to do it once. If R asks you whether you want to install dependencies for the packages, say yes
 
-install.packages("tidyverse")
-install.packages("tidytext")
-install.packages("readtext")
-install.packages("readxl")
-install.packages("syuzhet")
+
+# UNCOMMENT THE FOLLOWING LINES AND EXECUTE; THEN COMMENT AGAIN
+
+# install.packages("tidyverse")
+# install.packages("tidytext")
+# install.packages("readtext")
+# install.packages("readxl")
+# install.packages("syuzhet")
 
 # Once you have installed the packages you can comment the installation code like this (as mentioned, with "# " at the beginning of a line):
 
 # install.packages("blablabla")
 
-# so this operation will not be execute again in the future.
+# so this operation will not be execute again in the future. (it does not need to)
 
 
 library(tidyverse)
@@ -62,11 +65,11 @@ library(syuzhet)
 
 # Importing data ----
 
-## txt ----
+## .txt files ----
 
 # One easy way to import texts into R is to start from txt files.
 
-# You might have more than one, so it is important that you store them all together in one folder, and ideally with a consistent filename. Information in the filename can be used later on to add metadata to your dataset. The format "surname_title_year.txt" could be a good option, for example, where the surname and the title have to be one word.
+# You might have more than one, so it is important that you store them all together in one folder, and ideally with a consistent filename (often also named doc_id). Information in the filename can be used later on to add metadata to your dataset. The format "surname_title_year.txt" could be a good option, for example, where the surname and the title have to be one word.
 
 # In order to import a txt file, you can use the "read.delim" function from base R (which means you do not need to install extra packages). 
 
@@ -75,22 +78,30 @@ library(syuzhet)
 # before you execute the code, make sure the working directory is set to your main repository folder (the one "above" the /samples folder)
 
 
-federer_pilatus <- read.delim("samples/federer_pilatus_1912.txt", # this is the url to your file
-                              fileEncoding = "utf-8",  # we want to read it as unicode text
-                              header = F) %>% # we do not want the first line as a header 
-  rename(text = V1) # we can name the column text
+ENG18400_Trollope <- readtext("corpus/ENG18400_Trollope.txt", 
+                              encoding = "utf-8",  # we want to read it as unicode text
+                              ) # we can name the column text
 
 # your file has been imported! in this case, it looks just fine.
 # It could be that your texts has lost the sentence structure and it's just one very long string of text. If so, you can split it into sentences, for instance with packages tidytext (the result will be a dataframe), with the formula below:
 
-# federer_sentences <- tidytext::unnest_sentences(federer, input = "text", output = "sentence", to_lower = F)
+ENG18400_Trollope_sentences <- tidytext::unnest_sentences(ENG18400_Trollope, 
+                                                          input = "text", 
+                                                          output = "sentence",
+                                                          to_lower = F) 
 
-head(federer_pilatus)
+# if necessary (like in this case -- have a look!) we we can also eliminate extra white spaces
+
+ENG18400_Trollope_sentences <- ENG18400_Trollope_sentences %>%
+  mutate(sentence = gsub("\\s+"," ", sentence))
+
+
+head(ENG18400_Trollope_sentences)
 
 
 # YOUR TURN 1 ---------
 
-# can you create a corpus with another file in the samples folder?
+## can you create a corpus with another file in the corpus folder?
 
 
 
@@ -98,7 +109,20 @@ head(federer_pilatus)
 
 
 
-## multiple txt files ----------
+
+
+
+
+
+
+
+
+# # this command will empty our environment
+# rm(list = ls())
+
+
+
+# Multiple .txt files ----------
 
 # if you have more than one text, you probably won't want to repeat this operations manually several times.
 # you can then proceed as follows:
@@ -106,49 +130,122 @@ head(federer_pilatus)
 
 # run the "readtext" function from the "readtext" package, simply indicating the folder in which your texts are stored, and the format preceded by "*." (this means "all files that have this extension").
 
-corpus <- readtext("samples/*.txt", encoding = "UTF-8")  %>%
+corpus <- readtext("corpus/*.txt", encoding = "UTF-8") %>%
+  mutate(text = gsub("\\s+"," ", text)) # let's not forget about those extra white spaces
+
+head(corpus, 2)
+
+
+# the corpus we are using here is the ELTEC UK collection, available online.
+# because 100 texts require quite a lot of processing effort, for this practice
+# we can scale it down to 20
+
+corpus <- corpus %>%
+  sample_n(size = 20)
+
+
+# Split sentences -------
+
+# for the moment, each row contains a whole book under the variable "text"
+# we might wat to split that into sentences
+
+corpus_sentence <- corpus %>%
   unnest_sentences(input = "text",
                    output = "sentence",
                    to_lower = F, drop = T) %>%
   as_tibble()
+  
 
-head(corpus)
+head(corpus_sentence)
+
+# let's remove the corpus dataframe, to spare some space
+
+remove(corpus)
+
+# now, as we mentioned you might want to use the information in the doc_id to create more variables (that's how "columns" are called in R) in our corpus
+# alternatively, and maybe more efficiently, you can have a separate file where you store metadata.
+# Just remember to make yure that the variable "doc_id" in the corpus and in the metadata correspond,
+# otherwise you won' be able to match the data to the corpus.
 
 
-# let's see which files are in our corpus:
+# so let's first load the metadata
 
-corpus %>% 
-  select(doc_id) %>%
-  distinct()
+metadata <- readtext("corpus/ELTeC-eng_metadata.tsv",
+                     docid_field = "filename" 
+                          # the doc_id element is called 
+                          #"filename" in the tsv file,
+                          # we want to specify that those correspond
+                     )
+
+metadata
 
 
-# now, as we mentioned you might want to use the information in the filename to create more variables (that's how "columns" are called in R) in our corpus
+# we can see a variable "text" in the metadata, which really is the "collection". let's rename it
 
-corpus <- corpus %>%
-  mutate(sentence = str_squish(sentence)) %>% # eliminate unwanted extra spaces
-  separate(doc_id, into = c("author", "title", "year"), sep = "_", remove = T) %>% # and separate the metadata
-  mutate(year = str_remove(str_trim(year, side = "both"), ".txt")) # and make sure there are no extra spaces before/after the words
+metadata <- metadata %>%
+  rename(collection = text)
 
-corpus$year <- as.numeric(corpus$year)
+# if you have a look and the doc_id, you'll see that here the doc_id does not features the extension .txt
+
+metadata$doc_id
+
+# while the same is not true for the doc_id in the corpus
+
+unique(corpus_sentence$doc_id)
+
+
+# we must then either remove the ".txt" string from one, or add it to the other.
+
+# let's remove it from the corpus with the appropriate function from the package "stringr":
+
+corpus_sentence <- corpus_sentence %>%
+  mutate(doc_id = str_remove(doc_id, ".txt"))
+
+unique(corpus_sentence$doc_id) # now it should look fine
+
+
+
+# Add metadata ------
+
+# it might not be necessary to do so, but you might want to combine the two
+# you can do so easily weith the left_join function of the dplyr package, as long as there is one common variable (that's why we cared about the doc_id matching)
+
+
+corpus_sentence <- corpus_sentence %>%
+  left_join(metadata)
+
+corpus_sentence$first.edition <- as.numeric(corpus_sentence$first.edition)
 
 # let's see how it looks
 
-head(corpus)
+head(corpus_sentence)
 
 # Neat, right?
 
 # you might also want to add an identification number for the sentences, which can be useful for later analysis
 
-corpus <- corpus %>%
-  group_by(title) %>%
+corpus_sentence <- corpus_sentence %>%
+  group_by(doc_id) %>% # your doc_id must be always unique
   mutate(sentence_id = seq_along(sentence)) %>% # this means "sequence along the column sentence"
   ungroup()
 
-# and we might want then to split the text into tokens. we can easily use the unnest_tokens function of tidytext:
 
-corpus_token <- unnest_tokens(corpus, input = "sentence", output = "token", to_lower = F, drop = F)
+view(head(corpus_sentence))
 
-# as we did for sentences, we might want to preserve the position of the tokens insider sentences, and add a token_id index
+
+# Tokenization -------
+
+# we might want then to split the text into tokens.
+# we can easily use the unnest_tokens function from tidytext:
+
+corpus_token <- unnest_tokens(corpus_sentence,
+                              input = "sentence",
+                              output = "token", 
+                              to_lower = F, 
+                              drop = F)
+
+# as we did for sentences, we might want to preserve the position of the tokens inside sentences, 
+# and add a token_id index
 
 corpus_token <- corpus_token %>%
   group_by(title, sentence) %>%
@@ -168,7 +265,7 @@ head(corpus_token, 10)
 
 
 
-## csv and xslx ----
+# .csv and .xslx ----
 
 # another common format for texts is csv or xlsx. Importing a this is very easy, because R understands the csv and xslx formats well. You can either use code, or click directly on the file you want to import in the files panel.
 # R studio will ask if you want to import it, and you will be able to determine options with a friendly interface.
@@ -183,13 +280,17 @@ pride_excel <- read_excel("samples/pride.xlsx")
 head(pride_excel)
 
 
-## multiple files ----
+## multiple .xlsx ----
 
 # the procedure similar to the one we saw for the txt files, except it has read_excel as function, and it does not need to add a header or other variables
 
-corpus_source <- readtext("samples/*.xlsx")
+sample_texts <- readtext("samples/*.xlsx")
 
-head(corpus_source)
+head(sample_texts)
+
+remove(sample_texts, pride_excel)
+
+
 
 ## epubs ----------
 
@@ -211,3 +312,8 @@ structure(kafka_all)
 kafka_werke <- kafka_all[[9]][[1]]
 
 head(kafka_werke)
+
+
+remove(kafka_all, kafka_werke)
+
+
