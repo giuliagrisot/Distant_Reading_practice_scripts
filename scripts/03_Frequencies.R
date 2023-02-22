@@ -1,4 +1,10 @@
 
+# install.packages("quanteda")
+# install.packages("quanteda.textmodels")
+# install.packages("quanteda.textplots")
+# install.packages("quanteda.textstats")
+
+
 library(tidyverse)
 library(quanteda)
 library(quanteda.textmodels)
@@ -30,6 +36,9 @@ corpus_source <- readtext("corpus/*.txt", encoding = "UTF-8") %>%
   group_by(author_gender) %>%
   sample_n(5) %>% # for this session, let's limit the corpus to 10 texts (5 for each gender)
   ungroup()
+
+
+head(corpus_source)
 
 # and to transform this into a corpus that we can use with the package "quanteda", a friendly package that allows us to analyse various aspects of a corpus
 

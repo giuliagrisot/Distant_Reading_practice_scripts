@@ -85,6 +85,8 @@ ENG18400_Trollope <- readtext("corpus/ENG18400_Trollope.txt",
 # your file has been imported! in this case, it looks just fine.
 # It could be that your texts has lost the sentence structure and it's just one very long string of text. If so, you can split it into sentences, for instance with packages tidytext (the result will be a dataframe), with the formula below:
 
+names(ENG18400_Trollope)
+
 ENG18400_Trollope_sentences <- tidytext::unnest_sentences(ENG18400_Trollope, 
                                                           input = "text", 
                                                           output = "sentence",
@@ -141,13 +143,13 @@ head(corpus, 2)
 # we can scale it down to 20
 
 corpus <- corpus %>%
-  sample_n(size = 20)
+  sample_n(size = 10)
 
 
 # Split sentences -------
 
 # for the moment, each row contains a whole book under the variable "text"
-# we might wat to split that into sentences
+# we might what to split that into sentences
 
 corpus_sentence <- corpus %>%
   unnest_sentences(input = "text",
@@ -211,7 +213,7 @@ unique(corpus_sentence$doc_id) # now it should look fine
 
 
 corpus_sentence <- corpus_sentence %>%
-  left_join(metadata)
+  left_join(metadata, by = "doc_id")
 
 corpus_sentence$first.edition <- as.numeric(corpus_sentence$first.edition)
 
@@ -240,6 +242,15 @@ view(head(corpus_sentence))
 corpus_token <- unnest_tokens(corpus_sentence,
                               input = "sentence",
                               output = "token", 
+                              to_lower = F, 
+                              drop = F)
+
+# 
+
+corpus_ngrams <- unnest_ngrams(corpus_sentence,
+                              input = "sentence",
+                              output = "ngram",
+                              n = 5,
                               to_lower = F, 
                               drop = F)
 
