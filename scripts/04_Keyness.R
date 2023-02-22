@@ -34,27 +34,36 @@ result_keyness <- textstat_keyness(gender_dfm)
 textplot_keyness(result_keyness) 
 
 
+# obviously doing this focusing on gender is not really meaningful: typlically you would look at one author vs the rest, but you would need at least two texts by a single author.
+
+# for instance, we can try with Ward, Humphry, Mrs. (two texts by her are in our small corpus)
+
 
 ## -----------
 
 
-# define the name of the author on which we want to work
-my_author <- "Dickens, Charles"
+# reload the initial tokenized texts
+load("quanteda_texts_tok.Rdata")
+
+metadata <- readtext("corpus/ELTeC-eng_metadata.tsv",
+                     docid_field = "filename" 
+                     # the doc_id element is called 
+                     #"filename" in the tsv file,
+                     # we want to specify that those correspond
+)
 
 
 # separate target and reference corpus
 my_selection <- rep("Other", length(quanteda_texts_tok))
-my_selection[which(metadata$author == my_author)] <- "My author"
-quanteda_texts_tok <- tokens_group(quanteda_texts_tok, groups = my_selection)
+my_selection[which(grepl("_Ward", names(quanteda_texts_tok)), names(quanteda_texts_tok))] <- "My author"
 
-
-
-# separate target and reference corpus (for instance, Eliot)
+# separate target and reference corpus
 
 quanteda_texts_tok <- tokens_group(quanteda_texts_tok, groups = my_selection)
 
 # transform the corpus into a document-feature matrix
 document_feature_matrix <- dfm(quanteda_texts_tok)
+
 # note that the "grouping" is based on the names of the corpus, i.e. "My author" and "Others"
 
 # calculate the keyness for each word
@@ -69,6 +78,6 @@ textplot_keyness(keyness_results, n = 20)
 ### Your turn!!
 #############
 
-# run the same analysis on a different author
+# run the same analysis on a different author or on a different corpus
 # tip: you will have just to change the name of the author in line 29
 # and then re-run the script from the beginning

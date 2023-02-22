@@ -168,6 +168,8 @@ remove(corpus)
 # otherwise you won' be able to match the data to the corpus.
 
 
+# Add metadata ------
+
 # so let's first load the metadata
 
 metadata <- readtext("corpus/ELTeC-eng_metadata.tsv",
@@ -203,9 +205,6 @@ corpus_sentence <- corpus_sentence %>%
 
 unique(corpus_sentence$doc_id) # now it should look fine
 
-
-
-# Add metadata ------
 
 # it might not be necessary to do so, but you might want to combine the two
 # you can do so easily weith the left_join function of the dplyr package, as long as there is one common variable (that's why we cared about the doc_id matching)
