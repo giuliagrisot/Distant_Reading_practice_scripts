@@ -7,8 +7,10 @@ library(ggplot2)
 text_data <- read.csv("scripts/tweets.csv")
 
 # # or your books (bigger corpus, much more processing intensive)
-# text_data <- readtext::readtext("corpus/*.txt")
-
+text_data <- readtext::readtext("corpus/*.txt")
+text_data <- text_data %>%
+  sample_n(20)
+  
 
 # Convert text data into a corpus object
 mycorpus <- corpus(text_data$text)

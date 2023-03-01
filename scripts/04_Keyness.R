@@ -24,6 +24,7 @@ list(names(quanteda_texts_tok))
 
 gender_dfm <- tokens(quanteda_texts_tok, remove_punct = TRUE) %>%
   tokens_remove(stopwords("english")) %>%
+  # tokens_remove(readtext("scripts/first_names.txt")$text) %>%
   tokens_group(groups = author_gender) %>%
   dfm()
 
@@ -34,7 +35,7 @@ result_keyness <- textstat_keyness(gender_dfm)
 textplot_keyness(result_keyness) 
 
 
-# obviously doing this focusing on gender is not really meaningful: typlically you would look at one author vs the rest, but you would need at least two texts by a single author.
+# obviously doing this focusing on gender is not really meaningful: typically you would look at one author vs the rest, but you would need at least two texts by a single author.
 
 # for instance, we can try with Ward, Humphry, Mrs. (two texts by her are in our small corpus)
 

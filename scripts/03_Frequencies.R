@@ -216,7 +216,7 @@ quanteda_texts_dfm %>%
 # or compare the presence of a term by author
 
 quanteda_texts_dfm %>% 
-  textstat_frequency(groups = author) %>% 
+  textstat_frequency(groups = year) %>% 
   filter(feature == "power") %>%
   ggplot(aes(x = group, y = frequency, label=feature)) +
   geom_col(width = .1) +

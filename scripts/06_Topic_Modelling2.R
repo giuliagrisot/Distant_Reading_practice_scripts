@@ -1,8 +1,8 @@
 # Topic_modeling
 
-install.packages("mallet")
-install.packages("ggwordcloud")
-install.packages("reshape2")
+library("mallet")
+library("ggwordcloud")
+library("reshape2")
 
 # 1. Prepare the dataset
 
