@@ -33,6 +33,7 @@
 
 
 library(tidyverse)
+library(ggplot2)
 library(readr)
 library(data.table)
 library(syuzhet)
@@ -101,7 +102,7 @@ corpus_sentences <- corpus_source %>%
   group_by(doc_id) %>%
   mutate(sentence_id = seq_along(sentence)) %>%
   ungroup() %>%
-  mutate(unique_setence_id = seq_along(sentence))
+  mutate(unique_sentence_id = seq_along(sentence))
 
 
 corpus_tokens <- corpus_sentences %>%
@@ -122,7 +123,8 @@ head(corpus_tokens)
 
 corpus_tokens %>%
   group_by(title, token) %>%
-  anti_join(as_tibble(stopwords("en")), by = c("token"="value")) %>% # delete stopwords
+  mutate(token_lowercase = tolower(token)) %>%
+  anti_join(as_tibble(stopwords("en")), by = c("token_lowercase"="value")) %>% # delete stopwords
   count() %>% # summarize count per token per title
   arrange(desc(n)) %>% # highest freq on top
   group_by(title) %>% # 
@@ -149,10 +151,10 @@ corpus_tokens %>%
 
 
 first_names <- read_table("scripts/first_names.txt") %>%
-  rename(token = token)
+  rename(token = word)
 
 last_names <- read_table("scripts/last_names.txt")  %>%
-  rename(token = token)
+  rename(token = word)
 
 
 # let's see then how it looks without those
@@ -202,7 +204,7 @@ corpus_tokens %>%
 # we can therefore match these onto our corpus directly with the function called get_sentiments, which is included in the syuzhet package. Rather than loading the sentiment lexicons, it applies it directly to the corpus.
 
 novels_SA <- bind_rows(
-  # 1 AFINN 
+  # 1 AFINN
   corpus_tokens %>% 
     inner_join(get_sentiments("afinn"), by = c("token"="word"))  %>%
     # filter(value != 0) %>% # delete neutral words
@@ -274,6 +276,14 @@ novels_SA %>%
 # it looks pretty correct, right? a lot of "love" for positive sentiments and quite some doubt and death for negative ones
 # You might have noticed that "miss" is by far the biggest (and therefore more frequent) term in the "negative cloud. With some sense, we can probably understand that there is a chance this is a "mistake": "to miss" as a verb might be negative, but it is possible that "miss" would not really be a negative term in Austen's novels when referring to a young woman.
 # we can see how the graph looks like without it.
+test <- novels_SA %>%
+  anti_join(stop_words, by = c("token"="word")) %>% # delete stopwords
+  filter(token != "miss") %>%
+  filter(sentiment=="negative") %>% # here is where we can select what to look at
+  group_by(token) %>%
+  count() %>%
+  arrange(desc(n))
+
 
 novels_SA %>%
   anti_join(stop_words, by = c("token"="word")) %>% # delete stopwords
@@ -326,7 +336,7 @@ novels_SA %>%
   scale_fill_sjplot()
 
 
-## NER also has discrete emotions, we might want to focus on them separately
+## NRC also has discrete emotions, we might want to focus on them separately
 
 novels_SA %>%
   filter(dictionary == "nrc") %>%
