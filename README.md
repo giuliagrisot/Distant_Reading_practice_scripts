@@ -1,2 +1,5 @@
-# Distant_Reading_practice_2023
- Scripts and tutorials for DR with R
+# Distant_Reading_practice
+ Scripts and tutorials for DR with R for the MPhil in DH, University of Cambridge
+
+
+ Dr Giulia Grisot
