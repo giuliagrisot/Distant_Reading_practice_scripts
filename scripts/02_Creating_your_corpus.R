@@ -77,12 +77,17 @@ library(syuzhet)
 
 # before you execute the code, make sure the working directory is set to your main repository folder (the one "above" the /samples folder)
 
+getwd()
+
 
 ENG18400_Trollope <- readtext("corpus/ENG18400_Trollope.txt", 
                               encoding = "utf-8",  # we want to read it as unicode text
                               ) # we can name the column text
 
+head(ENG18400_Trollope)
+
 # your file has been imported! in this case, it looks just fine.
+
 # It could be that your texts has lost the sentence structure and it's just one very long string of text. If so, you can split it into sentences, for instance with packages tidytext (the result will be a dataframe), with the formula below:
 
 names(ENG18400_Trollope)
@@ -92,7 +97,11 @@ ENG18400_Trollope_sentences <- tidytext::unnest_sentences(ENG18400_Trollope,
                                                           output = "sentence",
                                                           to_lower = F) 
 
-# if necessary (like in this case -- have a look!) we we can also eliminate extra white spaces
+# let's have a look
+
+head(ENG18400_Trollope_sentences)
+
+# if necessary (like in this case -- have a look at sentences 3 and 6) we we can also eliminate extra white spaces
 
 ENG18400_Trollope_sentences <- ENG18400_Trollope_sentences %>%
   mutate(sentence = gsub("\\s+"," ", sentence))
@@ -135,34 +144,70 @@ head(ENG18400_Trollope_sentences)
 corpus <- readtext("corpus/*.txt", encoding = "UTF-8") %>%
   mutate(text = gsub("\\s+"," ", text)) # let's not forget about those extra white spaces
 
-head(corpus, 2)
+head(corpus)
 
 
 # the corpus we are using here is the ELTEC UK collection, available online.
 # because 100 texts require quite a lot of processing effort, for this practice
-# we can scale it down to 20
+# we can scale it down to 10
 
 corpus <- corpus %>%
   sample_n(size = 10)
 
+head(corpus)
+
 
 # Split sentences -------
 
-# for the moment, each row contains a whole book under the variable "text"
+# for the moment, each row contains a whole book in text form, under the variable "text"
 # we might what to split that into sentences
 
 corpus_sentence <- corpus %>%
   unnest_sentences(input = "text",
                    output = "sentence",
-                   to_lower = F, drop = T) %>%
+                   to_lower = F, # for the moment we do not want to convert to lower case
+                   drop = T) %>% # we can spare memory and drop the 'full text', 
+                                  # keeping only the new column" sentence"
   as_tibble()
   
+#  you might have noticed that this package (tidytext) splits a sentence at full stop, even when we night not want to (for instance with Mr. or Mrs.)
+# You can try a different package and see if it works better, or correct it manually
 
-head(corpus_sentence)
+corpus <- corpus %>%
+  mutate(text = str_replace_all(text, "Mrs. ", "Mrs "))  %>%
+  mutate(text = str_replace_all(text, "Mr. ", "Mr ")) %>%
+  mutate(text = str_replace_all(text, "Dr. ", "Dr "))
 
-# let's remove the corpus dataframe, to spare some space
 
-remove(corpus)
+# re-run the corpus sentence creation code
+
+corpus_sentence <- corpus %>%
+  unnest_sentences(input = "text",
+                   output = "sentence",
+                   to_lower = F, # for the moment we do not want to convert to lower case
+                   drop = T) %>% # we can spare memory and drop the 'full text', 
+  # keeping only the new column" sentence"
+  as_tibble()
+
+# let's have another look
+
+corpus_sentence %>%
+  filter(grepl("Mr", sentence))
+
+
+# the alternative is to use a different package or method.
+# one way to go about it is to use a more complex language model via the package Udpipe.
+# you should make sure you have a decent working memory and processing power, because it is a rather intensive job. you can reduce the sample to 3 texts just to see.
+
+corpus3 <- corpus %>%  
+  sample_n(size = 3) %>%
+  mutate(text = str_sub(text, 1, 1000)) # we'll look at a subset to make it less intensive
+
+library(udpipe)
+
+corpus_udp <- udpipe(x = corpus3$text, object = "english")
+
+view(corpus_udp)
 
 # now, as we mentioned you might want to use the information in the doc_id to create more variables (that's how "columns" are called in R) in our corpus
 # alternatively, and maybe more efficiently, you can have a separate file where you store metadata.
@@ -326,4 +371,9 @@ head(kafka_werke)
 
 remove(kafka_all, kafka_werke)
 
+
+# and that's it!
+# you can remove all objects from your environents with this code
+
+rm(list = ls()) 
 

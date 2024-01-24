@@ -68,6 +68,7 @@ View(my_df)
 my_new_df <- data.frame(
   author = c(XXXXXX), 
   nationality = c(XXXXX))
+
 View(my_new_df)
 
 
@@ -83,7 +84,7 @@ getwd() # getwd is the name of a function, and it tells you it just means "get w
 # if you want to change the wd, you can do so with the "setwd" function.
 # for example:
 
-setwd("05_Working_with_texts/corpus/") # this will make the subfolder "corpus" (already in your project) your working directory
+setwd("corpus") # this will make the subfolder "corpus" (already in your project) your working directory
 # have a look to check
 getwd()
 
@@ -145,11 +146,11 @@ my_second_vector+1 # this produces an error!!
 paste(my_string, "?")
 strsplit(my_string, " ")
 strsplit(my_string, " ")[[1]]
-substr(my_string, 1, 5)
+substr(my_string, 1, 5) # this takes the characters from 1 to 5, i.e. "t" "o" " " "b" "e" (note that a space is also a characther for the function substr)
 
 ### Your Turn (3) - start
 
-# use the "substr" function to extract the second "be" from my_string:
+# can you use the "substr" function to extract the second "be" from my_string?
 substr()
 
 ### Your Turn (3) - end
@@ -162,7 +163,7 @@ getwd()
 setwd()
 
 # read text line by line
-my_text <- readLines("Cbronte_Jane_1847.txt")
+my_text <- readLines("ENG18471_Bronte.txt")
 head(my_text, 5)
 
 
@@ -193,15 +194,16 @@ for(i in 1:10){
   }
 }
 
-# the sapply/lapply functions
 # (with a simple example: increase the values in one vector)
+
 my_vector <- 1:10
+
 my_vector
+
 for(i in 1:10){
-  
-  my_vector[i] <- my_vector[i]+1
-  
+    my_vector[i] <- my_vector[i]+1
 }
+
 my_vector
 
 # it is the same of this sapply function:
@@ -210,7 +212,7 @@ my_vector <- sapply(my_vector, function(x) x+1)
 my_vector
 
 # if you are working with lists, then you can use lapply
-my_list <- list(1:10, 2:20)
+my_list <- list(1:10, 50:60)
 my_list <- lapply(my_list, function(x) x+1)
 my_list
 
@@ -242,18 +244,20 @@ my_df[which(my_df$nationality == "Italian"),]
 my_df %>% filter(nationality == "Italian")
 
 ### Appendix
-# note: the "<-" sign can be substitited by "="
+# note: the "<-" sign can be substituted by "="
 my_variable <- "Shakespeare"
 my_variable = "Shakespeare"
 
 # still, it is advised to distinguish between the two, as the "<-" sign has a "stronger" function. See for example in the creation of a dataframe
 
-my_df <- data.frame(author = c("Shakespeare", "Dante", "Cervantes", "Pynchon"), nationality = c("English", "Italian", "Spanish", "American"))
+my_df <- data.frame(author = c("Shakespeare", "Dante", "Cervantes", "Pynchon"), 
+                    nationality = c("English", "Italian", "Spanish", "American"))
 
 author # it does not exist!!
 
-my_df_2 <- data.frame(author <- c("Shakespeare", "Dante", "Cervantes", "Pynchon"), nationality <- c("English", "Italian", "Spanish", "American"))
+my_df_2 <- data.frame(author <- c("Shakespeare", "Dante", "Cervantes", "Pynchon"),
+                      nationality <- c("English", "Italian", "Spanish", "American"))
 
 author 
 
-# now it exists!!
+# now it exists, so be careful.
