@@ -141,20 +141,24 @@ head(ENG18400_Trollope_sentences)
 
 # run the "readtext" function from the "readtext" package, simply indicating the folder in which your texts are stored, and the format preceded by "*." (this means "all files that have this extension").
 
-corpus <- readtext("corpus/*.txt", encoding = "UTF-8") %>%
+# the corpus we are using here is the ELTEC UK collection, available online.
+# because 100 texts require quite a lot of processing effort, for this practice
+# we have scaled it down to 5
+
+# this code creates a random list of 5 of the files inside the folder 'corpus"
+
+files_list <- list.files("corpus", full.names = T, pattern = "txt") %>% sample(5)
+
+corpus <- readtext(files_list, encoding = "UTF-8") %>%
+          # readtext("corpus/*.txt", encoding = "UTF-8") %>% # this would read the whole corpus
   mutate(text = gsub("\\s+"," ", text)) # let's not forget about those extra white spaces
 
 head(corpus)
 
-
-# the corpus we are using here is the ELTEC UK collection, available online.
-# because 100 texts require quite a lot of processing effort, for this practice
-# we can scale it down to 10
-
-corpus <- corpus %>%
-  sample_n(size = 10)
-
-head(corpus)
+# if we waned to reduce the corpus after having created it we could do this
+# corpus <- corpus %>%
+#   sample_n(size = 10)
+# head(corpus)
 
 
 # Split sentences -------

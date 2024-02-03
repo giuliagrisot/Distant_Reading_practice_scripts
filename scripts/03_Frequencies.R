@@ -16,7 +16,10 @@ library(readtext)
 # first we need to create a corpus.
 # this time we'll be using "quanteda", a package that allows to do corpus analysis very easily
 
-corpus_source <- readtext("corpus/*.txt", encoding = "UTF-8") %>%
+files_list <- list.files("corpus", full.names = T, pattern = "txt") %>% sample(5)
+
+
+corpus_source <- readtext(files_list, encoding = "UTF-8") %>%
   mutate(text = gsub("\\s+"," ", text))  %>%
   as_tibble() %>%
   mutate(doc_id = stringr::str_remove(doc_id, ".txt")) %>%
@@ -34,7 +37,7 @@ corpus_source <- readtext("corpus/*.txt", encoding = "UTF-8") %>%
               as_tibble()
   ) %>%
   group_by(author_gender) %>%
-  sample_n(5) %>% # for this session, let's limit the corpus to 10 texts (5 for each gender)
+  # sample_n(5) %>% # for this session, let's limit the corpus to 10 texts (5 for each gender)
   ungroup()
 
 
