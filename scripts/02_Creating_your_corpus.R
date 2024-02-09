@@ -92,7 +92,7 @@ head(ENG18400_Trollope)
 
 names(ENG18400_Trollope)
 
-ENG18400_Trollope_sentences <- tidytext::unnest_sentences(ENG18400_Trollope, 
+ENG18400_Trollope_sentences <- unnest_sentences(ENG18400_Trollope, 
                                                           input = "text", 
                                                           output = "sentence",
                                                           to_lower = F) 
@@ -147,9 +147,10 @@ head(ENG18400_Trollope_sentences)
 
 # this code creates a random list of 5 of the files inside the folder 'corpus"
 
-files_list <- list.files("corpus", full.names = T, pattern = "txt") %>% sample(5)
+files_list <- list.files(path = "corpus", full.names = T, pattern = "txt") %>% sample(5)
 
-corpus <- readtext(files_list, encoding = "UTF-8") %>%
+corpus <- 
+  readtext(files_list, encoding = "UTF-8") %>%
           # readtext("corpus/*.txt", encoding = "UTF-8") %>% # this would read the whole corpus
   mutate(text = gsub("\\s+"," ", text)) # let's not forget about those extra white spaces
 
