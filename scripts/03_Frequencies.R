@@ -60,7 +60,7 @@ remove(corpus_source)
 
 # quanteda mainly works with so called DFM (Document-feature matrix). These
 # - Represents frequencies of features in documents in a matrix
-# - Have an efficient structure, but do not have information on positions of words
+# - Have an efficient structure, but do not have information on the position of words
 # - Allow for a bag-of-words approach
 
 
@@ -76,6 +76,7 @@ remove(corpus_source)
 #                              split_hyphens = F,
 #                              # but no symbols
 #                              remove_symbols = T)
+# 
 # save(quanteda_texts_tok, file = "quanteda_texts_tok.RData")
 
 
@@ -96,7 +97,7 @@ textplot_wordcloud(quanteda_texts_dfm, max_words = 100)
 textstat_frequency(quanteda_texts_dfm) %>%
   head(30)
 
-# or for in a plot, such as a this one
+# or in a plot, such as a this one
 
 quanteda_texts_dfm %>% 
   textstat_frequency(n = 15) %>% 
@@ -136,14 +137,14 @@ quanteda_texts_dfm %>%
 # Alternatively, we can decide beforehand that we want to remove stopwords
 # again, this is a big file, so load it directly.
 
-  # quanteda_texts_tok_nostop <- quanteda::tokens(quanteda_texts,
-  #                                        remove_punct = T,
-  #                                        split_hyphens = F,
-  #                                        remove_symbols = T) %>%
-  #   tokens_remove(c(stopwords("english")))
-  # 
-  # save(quanteda_texts_tok_nostop, file = "quanteda_texts_tok_nostop.RData")
-  
+# quanteda_texts_tok_nostop <- quanteda::tokens(quanteda_texts,
+#                                        remove_punct = T,
+#                                        split_hyphens = F,
+#                                        remove_symbols = T) %>%
+#   tokens_remove(c(stopwords("english")))
+# 
+# save(quanteda_texts_tok_nostop, file = "quanteda_texts_tok_nostop.RData")
+#   
 load(file="quanteda_texts_tok_nostop.RData")
 
 
@@ -157,24 +158,36 @@ textplot_wordcloud(quanteda_texts_dfm, max_words = 100)
 # another thing we can do is to visualize group differences in frequency,
 # for instance, we might want to see which words are the most frequently used by women vs men authors.
 
-# colnames(quanteda_texts_dfm@docvars) #this will show you which metadta we have
+colnames(quanteda_texts_dfm@docvars) #this will show you which metadta we have
 
 
 quanteda_texts_dfm %>% 
-  textstat_frequency(n = 30, groups = author_gender) %>% 
+  textstat_frequency(n = 20, groups = author_gender) %>% 
   ggplot(aes(x = reorder(feature, frequency), y = frequency, color=group)) +
   geom_point() +
   coord_flip() +
   labs(x = NULL, y = "Frequency") +
   theme_minimal()
 
-textplot_wordcloud(quanteda_texts_dfm, max_words = 100)
+
+# we can also compare word frequencies by document
+textplot_wordcloud(quanteda_texts_dfm, 
+                   max_words = 100, 
+                   comparison = TRUE,
+                   labelsize = 1, 
+                   color = rev(RColorBrewer::brewer.pal(10, "Dark2")))
+
+# check which other color palettes you can use with
+RColorBrewer::display.brewer.all()
 
 
 ## or look at single words comparisons:
 
 sorted_features <- topfeatures(quanteda_texts_dfm, n = nfeat(quanteda_texts_dfm))
-sorted_features[c("cat", "dog", "rat", "rabbit")]
+sorted_features[c("cat", "dog", "bird", "rabbit")]
+
+
+
 
 # Stats ---------------
 
@@ -190,7 +203,7 @@ print(head(frequency_table, 20))
 
 # or as a full table
 
-view(frequency_table)
+# view(frequency_table)
 
 ### plots
 
@@ -210,7 +223,7 @@ quanteda_texts_dfm %>%
   filter(feature == "war") %>%
   ggplot(aes(x = group, y = frequency, label=feature)) +
   geom_col(width = .1) +
-  geom_point(size = 1) +
+  # geom_point(size = 1) +
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1, size = 7)
   )
@@ -219,11 +232,11 @@ quanteda_texts_dfm %>%
 # or compare the presence of a term by author
 
 quanteda_texts_dfm %>% 
-  textstat_frequency(groups = year) %>% 
+  textstat_frequency(groups = author) %>% 
   filter(feature == "power") %>%
   ggplot(aes(x = group, y = frequency, label=feature)) +
   geom_col(width = .1) +
-  geom_point(size = 1) +
+  # geom_point(size = 1) +
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1, size = 7)
   ) 
@@ -231,7 +244,47 @@ quanteda_texts_dfm %>%
 
 ## Concordance
 
-# with quateda you can also visualise concordances
+# with quanteda you can also visualise concordances (KWIC = keywords in context)
 
+kwic_test <- quanteda_texts_tok %>%
+  kwic(pattern =  "enem*", window = 10)
+
+head(kwic_test, 10)
+
+
+kwic_test <- quanteda_texts_tok %>%
+  kwic(pattern =  c("woman*","femal*"), 
+       window = 10)
+
+head(kwic_test, 10)
+
+# if you want to find multi-word expressions, separate words by white space and wrap the character vector by phrase().
+
+kwic_test <- quanteda_texts_tok %>%
+  kwic(pattern = phrase("fish and*"))
+
+head(kwic_test)
+
+remove(kwic_test)
+
+
+# LEXICAL DIVERSITY
+
+# one thing that you might want to do, is to chech how different various documents are
+# you can do that with the function "textstat_lexdiv()", which calculates various lexical diversity measures based on the number of unique types of tokens and the length of a document. It is useful, for instance, for analysing speakers’ or writers’ linguistic skills, or the complexity of ideas expressed in documents.
+
+tstat_lexdiv <- quanteda_texts_dfm %>%
+  textstat_lexdiv()
+
+
+# textstat_dist() calculates similarities of documents or features for various measures. The output is compatible with R’s dist(), so hierarchical clustering can be performed without any transformation.
+
+tstat_dist <- quanteda_texts_dfm %>% 
+  textstat_dist() %>%
+  as.dist()
+
+tstat_dist %>%
+  hclust() %>%
+  plot(xlab = "Distance", ylab = NULL)
 
 
