@@ -144,7 +144,7 @@ quanteda_texts_dfm %>%
 #   tokens_remove(c(stopwords("english")))
 # 
 # save(quanteda_texts_tok_nostop, file = "quanteda_texts_tok_nostop.RData")
-#   
+
 load(file="quanteda_texts_tok_nostop.RData")
 
 
@@ -185,8 +185,6 @@ RColorBrewer::display.brewer.all()
 
 sorted_features <- topfeatures(quanteda_texts_dfm, n = nfeat(quanteda_texts_dfm))
 sorted_features[c("cat", "dog", "bird", "rabbit")]
-
-
 
 
 # Stats ---------------
@@ -254,14 +252,14 @@ head(kwic_test, 10)
 
 kwic_test <- quanteda_texts_tok %>%
   kwic(pattern =  c("woman*","femal*"), 
-       window = 10)
+       window = 5)
 
 head(kwic_test, 10)
 
 # if you want to find multi-word expressions, separate words by white space and wrap the character vector by phrase().
 
 kwic_test <- quanteda_texts_tok %>%
-  kwic(pattern = phrase("fish and*"))
+  kwic(pattern = phrase("old woman"))
 
 head(kwic_test)
 
