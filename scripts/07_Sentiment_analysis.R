@@ -106,7 +106,8 @@ corpus_sentences <- corpus_source %>%
 
 
 corpus_tokens <- corpus_sentences %>%
-  unnest_tokens(input = sentence, output = token, drop = T, to_lower = F) %>%
+  unnest_tokens(input = sentence, output = token, drop = T, to_lower = T) %>% 
+  # we turn all to lowercase
   group_by(doc_id, sentence_id) %>%
   mutate(token_id = seq_along(token)) %>%
   ungroup() %>%
@@ -150,10 +151,10 @@ corpus_tokens %>%
 # relatively unsurprisingly, names of characters are generally the most frequent tokens. To see what other tokens are highly frequent, we can for example import a list of first and last names, so that we can exclude them from the plot.
 
 
-first_names <- read_table("scripts/first_names.txt") %>%
+first_names <- read_csv("scripts/first_names.txt") %>%
   rename(token = word)
 
-last_names <- read_table("scripts/last_names.txt")  %>%
+last_names <- read_csv("scripts/last_names.txt") %>%
   rename(token = word)
 
 
@@ -203,6 +204,25 @@ corpus_tokens %>%
 # in this example, we will use three popular lexicons, namely the AFINN, NRC and BING. For the sake of simplicity, we will simply use the versions provided by the syuzhet package.
 # we can therefore match these onto our corpus directly with the function called get_sentiments, which is included in the syuzhet package. Rather than loading the sentiment lexicons, it applies it directly to the corpus.
 
+# but before we do tha, let's have a look at the Sentiment lexicons alone:
+
+## 1) which lexicons are included in the package and how big are they?
+
+?get_sentiment_dictionary()
+
+head(get_sentiment_dictionary("afinn"), 100)
+get_sentiment_dictionary("afinn") %>% nrow()
+
+head(get_sentiment_dictionary("bing"), 100)
+get_sentiment_dictionary("bing") %>% nrow()
+
+head(get_sentiment_dictionary("nrc"), 100)
+get_sentiment_dictionary("nrc") %>% nrow()
+
+
+# now let's apply them all to our corpus
+
+
 novels_SA <- bind_rows(
   # 1 AFINN
   corpus_tokens %>% 
@@ -225,7 +245,8 @@ novels_SA <- bind_rows(
     group_by(title, sentiment) %>%
     mutate(dictionary = 'nrc'),
   
-)
+) %>%
+  ungroup()
 
 # in this case, we have performed an "inner_join" function from the package tidyverse. this means that the combination of our corpus and the lexicons will only preserve the words for which a match exist, i.e. only words with a sentiment value.
 
@@ -276,14 +297,6 @@ novels_SA %>%
 # it looks pretty correct, right? a lot of "love" for positive sentiments and quite some doubt and death for negative ones
 # You might have noticed that "miss" is by far the biggest (and therefore more frequent) term in the "negative cloud. With some sense, we can probably understand that there is a chance this is a "mistake": "to miss" as a verb might be negative, but it is possible that "miss" would not really be a negative term in Austen's novels when referring to a young woman.
 # we can see how the graph looks like without it.
-test <- novels_SA %>%
-  anti_join(stop_words, by = c("token"="word")) %>% # delete stopwords
-  filter(token != "miss") %>%
-  filter(sentiment=="negative") %>% # here is where we can select what to look at
-  group_by(token) %>%
-  count() %>%
-  arrange(desc(n))
-
 
 novels_SA %>%
   anti_join(stop_words, by = c("token"="word")) %>% # delete stopwords
@@ -299,6 +312,7 @@ novels_SA %>%
                  random.order = F,
   ))
 
+
 # better, right?
 
 
@@ -306,6 +320,7 @@ novels_SA %>%
 
 
 ## dictionaries comparison -----------------
+
 # we might want to see if the different lexicons perform differntly.
 # the three elxicons share the negative/positive value, so let's focus on that
 
@@ -378,25 +393,157 @@ novels_SA %>%
 # we can do so with some graphs:
 
 
-## nrc emotions across novels ----------------------------
+## nrc emotions across novels (let's see three) ----------------------------
 
+title_list <- novels_SA %>% select(title) %>% distinct() %>% sample_n(3)
 
 novels_SA %>% 
   filter(dictionary == "nrc") %>%
   filter(!sentiment %in% c('negative','positive')) %>%
+  right_join(title_list) %>% # we retain only the titles we selected
   group_by(sentiment, title, sentence_id) %>%
   count() %>% # summarize count
   # create area plot
   ggplot(aes(x = as.numeric(sentence_id), y = n)) +
   geom_area(aes(fill = sentiment), stat = 'identity') + 
   # add black smoothing line without standard error
-  geom_smooth(aes(fill = sentiment), method = "loess", se = F, col = 'black') + 
   theme(legend.position = 'none', # remove legend
         text = element_text(size = fs)) + # change font size
   labs(x = "Chapter", y = "Emotion value", # add labels
-       title = "Jane Austen: Emotions in the novels",
        subtitle = "Using tidytext and the nrc sentiment dictionary") +
   # separate plots per sentiment and title and free up x-axes
-  facet_grid(title ~ sentiment, scale = "free_x") +
+  facet_grid(sentiment ~ title, scale = "free_x") +
+  scale_fill_sjplot()
+
+
+# or just negative positive
+
+
+novels_SA %>% 
+  filter(dictionary == "nrc") %>%
+  filter(sentiment %in% c('negative','positive')) %>%
+  right_join(title_list) %>% # we retain only the titles we selected
+  group_by(sentiment, title, sentence_id) %>%
+  count() %>% # summarize count
+  # create area plot
+  ggplot(aes(x = as.numeric(sentence_id), y = n)) +
+  geom_area(aes(fill = sentiment), stat = 'identity') + 
+  # add black smoothing line without standard error
+  theme(legend.position = 'none', # remove legend
+        text = element_text(size = fs)) + # change font size
+  labs(x = "Chapter", y = "Emotion value", # add labels
+       subtitle = "Using tidytext and the nrc sentiment dictionary") +
+  # separate plots per sentiment and title and free up x-axes
+  facet_grid(sentiment ~ title, scale = "free_x") +
+  scale_fill_sjplot()
+
+
+
+# this value is a binary value yes/no (positive/negative), so it does not tell us much abiout the actual dimension of the sentiment.
+# other dictionaries use continuous values, such as the 'afinn' one.
+# let's see the same plot for it
+
+
+afinn <- get_sentiment_dictionary("afinn")
+
+novels_SA %>% 
+  filter(dictionary == "afinn") %>%
+  right_join(title_list) %>% # we retain only the titles we selected
+  group_by(title, sentence_id, sentiment) %>%
+  summarise(n = sum(value)) %>% # summarize count
+  # create area plot
+  ggplot(aes(x = as.numeric(sentence_id), y = n)) +
+  geom_area(aes(fill = sentiment), stat = 'identity') + 
+  # add black smoothing line without standard error
+  theme(legend.position = 'none', # remove legend
+        text = element_text(size = fs)) + # change font size
+  labs(x = "Chapter", y = "Emotion value", # add labels
+       subtitle = "Using tidytext and the nrc sentiment dictionary") +
+  # separate plots per sentiment and title and free up x-axes
+  facet_grid(sentiment ~ title, scale = "free_x") +
+  scale_fill_sjplot()
+
+
+
+# it is often easier to evaluate the sentiment over a novel by looking a bigger chunks of text at the time (such as chapters). Sometimes you might have that information in your files. 
+# Because in this case we do not have chapters data in our dataset, we can arbitrarily assign "fake chapters" to the novels, to see the evolution of sentiment throughout them. (of course if you have that data already present in your dataset you do not need this)
+
+# for the sake of simplicity, let's split the novels into 15 chapters each.
+
+test <- novels_SA %>%
+  ungroup() %>%
+  group_split(title)
+
+test2 = list()
+
+for (i in 1:length(test)) {
+  avg_ch_lenght <- nrow(test[[i]])/15
+  r  <- rep(1:ceiling(nrow(test[[i]])/avg_ch_lenght),each=avg_ch_lenght)[1:nrow(test[[i]])]
+  test2[[i]] <- split(test[[i]],r)
+}
+
+
+for (i in 1:length(test2)) {
+  for (j in 1:length(test2[[i]])) {
+    test2[[i]][[j]]$chapter <- paste0(j)
+  }
+}
+
+test = list()
+
+for (i in 1:length(test2)) {
+  test[[i]] <- data.table::rbindlist(test2[[i]])
+}
+
+novels_SA2 <- data.table(rbindlist(test))
+novels_SA2$chapter <- as.numeric(novels_SA2$chapter)
+
+remove(test, test2, j,i,r,avg_ch_lenght)
+
+# and let's see how it looks if we group and count by 'chapter'
+
+
+novels_SA2 %>% 
+  filter(dictionary == "nrc") %>%
+  filter(sentiment %in% c('negative','positive')) %>%
+  right_join(title_list) %>% # we retain only the titles we selected
+  group_by(sentiment, title, chapter) %>%
+  count() %>% # summarize count
+  # create area plot
+  ggplot(aes(x = as.numeric(chapter), y = n)) +
+  geom_area(aes(fill = sentiment), stat = 'identity') + 
+  # add black smoothing line without standard error
+  theme(legend.position = 'none', # remove legend
+        text = element_text(size = fs)) + # change font size
+  labs(x = "Chapter", y = "Emotion value", # add labels
+       subtitle = "Using tidytext and the nrc sentiment dictionary") +
+  # separate plots per sentiment and title and free up x-axes
+  facet_grid(sentiment ~ title, scale = "free_x") +
+  scale_fill_sjplot()
+
+
+
+# this value is a binary value yes/no (positive/negative), so it does not tell us much abiout the actual dimension of the sentiment.
+# other dictionaries use continuous values, such as the 'afinn' one.
+# let's see the same plot for it
+
+
+afinn <- get_sentiment_dictionary("afinn")
+
+novels_SA2 %>% 
+  filter(dictionary == "afinn") %>%
+  right_join(title_list) %>% # we retain only the titles we selected
+  group_by(title, chapter, sentiment) %>%
+  summarise(n = sum(value)) %>% # summarize count
+  # create area plot
+  ggplot(aes(x = chapter, y = n)) +
+  geom_area(aes(fill = sentiment), stat = 'identity') + 
+  # add black smoothing line without standard error
+  theme(legend.position = 'none', # remove legend
+        text = element_text(size = fs)) + # change font size
+  labs(x = "Chapter", y = "Emotion value", # add labels
+       subtitle = "Using tidytext and the nrc sentiment dictionary") +
+  # separate plots per sentiment and title and free up x-axes
+  facet_grid(sentiment ~ title, scale = "free_x") +
   scale_fill_sjplot()
 
