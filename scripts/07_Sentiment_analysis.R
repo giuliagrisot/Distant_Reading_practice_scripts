@@ -96,14 +96,12 @@ corpus_source <- readtext("corpus/*.txt", encoding = "UTF-8") %>%
 
 head(corpus_source)
 
-
 corpus_sentences <- corpus_source %>%
   unnest_sentences(input = text, output = sentence, drop = T, to_lower = F) %>%
   group_by(doc_id) %>%
   mutate(sentence_id = seq_along(sentence)) %>%
   ungroup() %>%
   mutate(unique_sentence_id = seq_along(sentence))
-
 
 corpus_tokens <- corpus_sentences %>%
   unnest_tokens(input = sentence, output = token, drop = T, to_lower = T) %>% 
@@ -124,8 +122,7 @@ head(corpus_tokens)
 
 corpus_tokens %>%
   group_by(title, token) %>%
-  mutate(token_lowercase = tolower(token)) %>%
-  anti_join(as_tibble(stopwords("en")), by = c("token_lowercase"="value")) %>% # delete stopwords
+  anti_join(as_tibble(stopwords("en")), by = c("token"="value")) %>% # delete stopwords
   count() %>% # summarize count per token per title
   arrange(desc(n)) %>% # highest freq on top
   group_by(title) %>% # 
@@ -204,7 +201,7 @@ corpus_tokens %>%
 # in this example, we will use three popular lexicons, namely the AFINN, NRC and BING. For the sake of simplicity, we will simply use the versions provided by the syuzhet package.
 # we can therefore match these onto our corpus directly with the function called get_sentiments, which is included in the syuzhet package. Rather than loading the sentiment lexicons, it applies it directly to the corpus.
 
-# but before we do tha, let's have a look at the Sentiment lexicons alone:
+# but before we do that, let's have a look at the Sentiment lexicons alone:
 
 ## 1) which lexicons are included in the package and how big are they?
 
@@ -213,7 +210,7 @@ corpus_tokens %>%
 head(get_sentiment_dictionary("afinn"), 100)
 get_sentiment_dictionary("afinn") %>% nrow()
 
-head(get_sentiment_dictionary("bing"), 100)
+tail(get_sentiment_dictionary("bing"), 100)
 get_sentiment_dictionary("bing") %>% nrow()
 
 head(get_sentiment_dictionary("nrc"), 100)
@@ -321,8 +318,8 @@ novels_SA %>%
 
 ## dictionaries comparison -----------------
 
-# we might want to see if the different lexicons perform differntly.
-# the three elxicons share the negative/positive value, so let's focus on that
+# we might want to see if the different lexicons perform differently.
+# the three lexicons share the negative/positive value, so let's focus on that
 
 novels_SA %>%
   filter(sentiment == "negative" | sentiment == "positive") %>%
@@ -446,6 +443,14 @@ novels_SA %>%
 
 afinn <- get_sentiment_dictionary("afinn")
 
+test <- novels_SA %>% 
+  filter(dictionary == "afinn") %>%
+  right_join(title_list) %>% # we retain only the titles we selected
+  group_by(title, sentence_id, sentiment) %>%
+  summarise(n = sum(value)) %>%
+  arrange(desc(n)) %>%
+  left_join(corpus_sentences)
+
 novels_SA %>% 
   filter(dictionary == "afinn") %>%
   right_join(title_list) %>% # we retain only the titles we selected
@@ -546,4 +551,7 @@ novels_SA2 %>%
   # separate plots per sentiment and title and free up x-axes
   facet_grid(sentiment ~ title, scale = "free_x") +
   scale_fill_sjplot()
+
+
+
 
