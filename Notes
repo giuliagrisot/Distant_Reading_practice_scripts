@@ -1,0 +1,12 @@
+notes:
+
+MACRO vs WEIGHTED ACERAGES:
+If you want to treat all classes equally, then using macro average would be a good choice. If you have an imbalanced dataset but want to assign more weight to classes with more samples, consider using weighted average
+
+Chi-square:
+A chi-square (χ2) statistic is a measure of the difference between the observed and expected frequencies of the outcomes of a set of events or variables.
+Chi-square is useful for analyzing such differences in categorical variables, especially those nominal in nature.
+χ2 depends on the size of the difference between actual and observed values, the degrees of freedom, and the sample size.
+χ2 can be used to test whether two variables are related or independent of each other.
+It can also be used to test the goodness of fit between an observed distribution and a theoretical distribution of frequencies.
+
