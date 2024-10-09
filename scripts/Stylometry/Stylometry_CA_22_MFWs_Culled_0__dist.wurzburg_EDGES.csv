@@ -1,3 +1,0 @@
-Source,Target,Weight,Type
-doc_id,text,6,undirected
-text,doc_id,6,undirected
