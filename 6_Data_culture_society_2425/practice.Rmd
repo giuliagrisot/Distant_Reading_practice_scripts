@@ -1,0 +1,60 @@
+---
+title: "Data in Culture and Society - Lab: Analysis and Visualisation I"
+author: "Dr Giulia Grisot"
+date: "13/01/2025"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction
+
+This is an RMarkdown document for our coming Lab sessions. We will start from scratch and learn how to load, explore, and visualise data in R. We will be using the `ggplot2` package for data visualisation and the `dplyr` package for data manipulation.
+
+# Prerequisites
+
+Before we start, make sure you have the following packages installed:
+
+```{r}
+install.packages("ggplot2")
+install.packages("dplyr")
+install.packages("readr")
+installed.packages("tidyverse")
+```
+
+# Objective
+
+The objective of this lab is to learn how to load, explore, and visualise data in R. We will be using the `ggplot2` package for data visualisation and the `dplyr` package for data manipulation.
+
+# Dataset
+
+Before we start, we have to decide what we want to analyse.
+
+1) Decide on a research question: what shall we investigate?
+2) Consider the data: what data do we need to answer the research question?
+3) Find the data: where can we find the data?
+4) Consider what we said about data being inherently non-neutral: how can we account for data silences and biases?
+
+
+# Load the Data
+
+Once we have decided on the dataset, we can load it into R.
+
+
+# Explore the Data
+
+Now that we have loaded the data, let's explore it to understand its structure and contents.
+
+## Descriptive Statistics
+
+One of the first step into analysing a dataset is to compute some descriptive statistics. Let's start by looking at the summary of the dataset.
+
+```{r}
+summary(data)
+```
+
+
+
+# How can we gain insight into our specific resarch question?
