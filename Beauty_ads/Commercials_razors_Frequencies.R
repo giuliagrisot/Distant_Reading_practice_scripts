@@ -40,6 +40,9 @@ hair_commercials <- hair_commercials %>%
   mutate(Target = tolower(Target)) %>%
   mutate(Product = tolower(Product))
 
+hair_commercials <- hair_commercials %>%
+  mutate(Company = tolower(Company))
+
 # let's check how many companies we have
 unique(hair_commercials$Company) %>% length()
 
@@ -86,6 +89,14 @@ word_freq_company <- hair_commercials_tok %>%
   slice(1:5) # Select the top 5 most common words for each company
 
 
+# Count by target
+
+word_freq_target <- hair_commercials_tok %>%
+  count(Target, word, sort = TRUE) %>%
+  group_by(Company) %>%
+  slice(1:5)
+
+
 head(word_freq_company, 20)
 
 # we can also plot the top 5 words for each company
@@ -130,7 +141,7 @@ color_palette_kelly <- color_palette_kelly[2:11]
 # Corpus ---------------
 
 quanteda_texts <- quanteda::corpus(hair_commercials,
-                                   docid_field = "doc_id",
+                                   docid_field = "id",
                                    text_field = "Script",
                                    meta = list("Company",
                                                "Product",
@@ -187,7 +198,6 @@ quanteda_texts_dfm <- dfm(quanteda_texts_tok)
 
 textplot_wordcloud(quanteda_texts_dfm, max_words = 100)
 
-textplot_wordcloud(quanteda_texts_dfm, max_words = 100, min_freq = 10, comparison = T)
 
 # in a "table" form
 
